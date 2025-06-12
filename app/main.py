@@ -1,5 +1,6 @@
 import sys
 
+COMMANDS = ["exit", "echo", "type"]
 
 def main():
     while True:
@@ -9,6 +10,11 @@ def main():
                 sys.exit(0)
             case ["echo", *rest]:
                 print(" ".join(rest))
+            case ["type", arg]:
+                if arg in COMMANDS:
+                    print(f'{arg} is a shell builtin')
+                else:
+                    print(f'{arg}: command not found')
             case _:
                 print(f'{" ".join(command)}: command not found')
 
