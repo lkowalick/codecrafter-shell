@@ -3,14 +3,14 @@ import sys
 
 def main():
     while True:
-        command_str = input("$ ")
-        match command_str.split():
+        command = input("$ ").split()
+        match command:
             case ["exit", status]:
                 sys.exit(0)
             case ["echo", *rest]:
-                sys.stdout(" ".join(rest))
+                print(" ".join(rest))
             case _:
-                print(f'{" ".join(command_str)}: command not found')
+                print(f'{" ".join(command)}: command not found')
 
 if __name__ == "__main__":
     main()
