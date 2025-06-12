@@ -24,7 +24,7 @@ def main():
             case ["pwd"]:
                 print(os.getcwd())
             case ["cd", destination]:
-                if os.path.exists(dir):
+                if os.path.exists(destination):
                     os.chdir(destination)
                 else:
                     print(f'cd: {destination}: No such file or directory')
