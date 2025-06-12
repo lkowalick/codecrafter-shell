@@ -25,7 +25,7 @@ def main():
                 print(os.getcwd())
             case ["cd", destination]:
                 if destination == "~":
-                    os.chdir(os.environ("HOME"))
+                    os.chdir(os.environ["HOME"])
                 elif os.path.exists(destination):
                     os.chdir(destination)
                 else:
