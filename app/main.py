@@ -35,7 +35,7 @@ def find_executable(name) -> None | str:
             continue
         for executable in os.listdir(dir):
             if executable == name:
-                return '{dir}/{executable}'
+                return f'{dir}/{executable}'
 
 if __name__ == "__main__":
     main()
