@@ -24,7 +24,8 @@ def main():
             case [command, *args]:
                 if find_executable(command):
                     subprocess.run([command]+args)
-                print(f'{" ".join(command)}: command not found')
+                else:
+                    print(f'{command}: command not found')
             case _:
                 print(f'{" ".join(full_command)}: command not found')
 
