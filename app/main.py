@@ -1,4 +1,5 @@
 import sys
+import os
 
 COMMANDS = ["exit", "echo", "type"]
 
@@ -14,7 +15,14 @@ def main():
                 if arg in COMMANDS:
                     print(f'{arg} is a shell builtin')
                 else:
-                    print(f'{arg}: not found')
+                    found = False
+                    for dir in sys.path:
+                        for executable in os.listdir(dir):
+                            if os.path.basename(executable) == arg:
+                                print(f'{arg} is {executable}')
+                                found = True
+                    if not found:
+                        print(f'{arg}: not found')
             case _:
                 print(f'{" ".join(command)}: command not found')
 
