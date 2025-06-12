@@ -2,7 +2,7 @@ import sys
 import os
 import subprocess
 
-COMMANDS = ["exit", "echo", "type"]
+BUILTINS = ["exit", "echo", "type", "pwd"]
 
 def main():
     while True:
@@ -13,7 +13,7 @@ def main():
             case ["echo", *rest]:
                 print(" ".join(rest))
             case ["type", arg]:
-                if arg in COMMANDS:
+                if arg in BUILTINS:
                     print(f'{arg} is a shell builtin')
                 else:
                     executable = find_executable(arg)
@@ -21,6 +21,8 @@ def main():
                         print(f'{arg} is {executable}')
                     else:
                         print(f'{arg}: not found')
+            case ["pwd"]:
+                print(os.getcwd())
             case [command, *args]:
                 if find_executable(command):
                     subprocess.run([command]+args)
