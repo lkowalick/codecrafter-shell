@@ -17,6 +17,8 @@ def main():
                 else:
                     found = False
                     for dir in os.environ["PATH"].split(":"):
+                        if not os.path.exists(dir):
+                            continue
                         for executable in os.listdir(dir):
                             if os.path.basename(executable) == arg:
                                 print(f'{arg} is {executable}')
