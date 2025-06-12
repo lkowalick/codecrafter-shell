@@ -24,7 +24,10 @@ def main():
             case ["pwd"]:
                 print(os.getcwd())
             case ["cd", destination]:
-                os.chdir(destination)
+                if os.path.exists(dir):
+                    os.chdir(destination)
+                else:
+                    print(f'cd: {destination}: No such file or directory')
             case [command, *args]:
                 if find_executable(command):
                     subprocess.run([command]+args)
