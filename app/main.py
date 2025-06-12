@@ -16,7 +16,7 @@ def main():
                     print(f'{arg} is a shell builtin')
                 else:
                     found = False
-                    for dir in sys.path:
+                    for dir in os.environ["PATH"].split(":"):
                         for executable in os.listdir(dir):
                             if os.path.basename(executable) == arg:
                                 print(f'{arg} is {executable}')
