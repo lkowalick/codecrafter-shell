@@ -14,7 +14,7 @@ def main():
                 if arg in COMMANDS:
                     print(f'{arg} is a shell builtin')
                 else:
-                    print(f'{arg}: command not found')
+                    print(f'{arg}: not found')
             case _:
                 print(f'{" ".join(command)}: command not found')
 
