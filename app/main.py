@@ -2,7 +2,7 @@ import sys
 import os
 import subprocess
 
-BUILTINS = ["exit", "echo", "type", "pwd"]
+BUILTINS = ["exit", "echo", "type", "pwd", "cd"]
 
 def main():
     while True:
@@ -23,6 +23,8 @@ def main():
                         print(f'{arg}: not found')
             case ["pwd"]:
                 print(os.getcwd())
+            case ["cd", destination]:
+                os.chdir(destination)
             case [command, *args]:
                 if find_executable(command):
                     subprocess.run([command]+args)
