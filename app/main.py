@@ -20,8 +20,8 @@ def main():
                         if not os.path.exists(dir):
                             continue
                         for executable in os.listdir(dir):
-                            if os.path.basename(executable) == arg:
-                                print(f'{arg} is {executable}')
+                            if executable == arg:
+                                print(f'{arg} is {dir}/{executable}')
                                 found = True
                     if not found:
                         print(f'{arg}: not found')
