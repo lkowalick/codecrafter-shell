@@ -18,7 +18,7 @@ def main():
                 else:
                     executable = find_executable(arg)
                     if executable:
-                        print(f'{arg} is {dir}/{executable}')
+                        print(f'{arg} is {executable}')
                     else:
                         print(f'{arg}: not found')
             case [command, *args]:
