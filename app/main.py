@@ -64,7 +64,6 @@ def tokenize(string):
             separated = False
         elif string[i] == DOUBLE_QUOTE:
             i += 1
-            start = i
             token = ""
             while i < len(string) and string[i] != DOUBLE_QUOTE:
                 if string[i] == BACKSLASH:
@@ -78,14 +77,16 @@ def tokenize(string):
             i += 1 # skip over the closing quote
             separated = False
         else:
-            start = i
-            i += 1
+            token = ""
             while i < len(string) and string[i] not in [SPACE, SINGLE_QUOTE, DOUBLE_QUOTE]:
+                if string[i] == BACKSLASH:
+                    i += 1
+                token += string[i]
                 i += 1
             if separated:
-                tokens.append(string[start:i])
+                tokens.append(token)
             else:
-                tokens[-1] += string[start:i]
+                tokens[-1] += token
             separated = False
     return tokens
 
