@@ -55,6 +55,7 @@ def tokenize(string):
                 tokens.append(string[start:i])
             else:
                 tokens[-1] += string[start:i]
+            i += 1 # skip over the closing quote
             separated = False
         else:
             start = i
