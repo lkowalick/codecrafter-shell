@@ -32,8 +32,6 @@ def main():
                     print(f'cd: {destination}: No such file or directory')
             case [command, *args]:
                 if find_executable(command):
-                    for i in range(len(args)):
-                        args[i] = "'" + args[i] + "'"
                     subprocess.run([command]+args)
                 else:
                     print(f'{command}: command not found')
