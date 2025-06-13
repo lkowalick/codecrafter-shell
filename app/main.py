@@ -43,22 +43,20 @@ def tokenize(string):
     tokens = []
     while i < len(string):
         if string[i] == " ":
-            i += 1
+            pass
         elif string[i] == "'":
             i += 1
-            token = ""
+            start = i
             while string[i] != "'":
-                token += string[i]
                 i += 1
-            i += 1
-            tokens.append(token)
+            tokens.append(string[start:i])
         else:
-            token = string[i]
+            start = i
             i += 1
             while string[i] != " ":
-                token += string[i]
                 i += 1
-            tokens.append(token)
+            tokens.append(string[start:i])
+        i += 1
     return tokens
 
 def find_executable(name) -> None | str:
