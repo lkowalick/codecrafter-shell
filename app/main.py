@@ -33,7 +33,7 @@ def main():
                     else:
                         output.write(f'{arg}: not found\n')
                 case ["pwd"]:
-                    output.write(os.getcwd())
+                    output.write(os.getcwd()+"\n")
                 case ["cd", "~"]:
                     os.chdir(os.environ["HOME"])
                 case ["cd", destination] if os.path.exists(destination):
