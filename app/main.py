@@ -62,11 +62,8 @@ def tokenize(string):
             i += 1
             token = ""
             while i < len(string) and string[i] != DOUBLE_QUOTE:
-                if string[i] == BACKSLASH:
-                    if string[i+1] == "n":
-                        string[i+1] = "\n"
-                    elif string[i+1] in ["$", BACKSLASH, DOUBLE_QUOTE]:
-                        i += 1
+                if string[i] == BACKSLASH and string[i+1] in ["$", BACKSLASH, DOUBLE_QUOTE]:
+                    i += 1
                 token += string[i]
                 i += 1
             if separated:
