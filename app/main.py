@@ -80,7 +80,7 @@ def tokenize(string):
         else:
             start = i
             i += 1
-            while i < len(string) and string[i] != SPACE and string[i] != SINGLE_QUOTE:
+            while i < len(string) and string[i] not in [SPACE, SINGLE_QUOTE, DOUBLE_QUOTE]:
                 i += 1
             if separated:
                 tokens.append(string[start:i])
