@@ -15,12 +15,19 @@ def main():
         while True:
             full_command = tokenize(input("$ "))
             output = sys.stdout
+            error = sys.stderr
             match full_command:
-                case [*beginning, ">", filename] | [*beginning, "1>", filename]:
-                    output = open(filename,'w')
+                case [*beginning, ">", out_file, "2>", error_file] | [*beginning, "1>", out_file, "2>", error_file]:
+                    output = open(out_file,'w')
+                    error = open(error_file, 'w')
                     full_command = beginning
+                case [*beginning, ">", out_file] | [*beginning, "1>", out_file]:
+                    output = open(out_file,'w')
+                    full_command = beginning
+                case [*beginning, "2>", error_file]:
+                    error = open(error_file, 'w')
             match full_command:
-                case ["exit", status]:
+                case ["exit", _]:
                     sys.exit(0)
                 case ["echo", *rest]:
                     output.write(" ".join(rest)+"\n")
@@ -31,7 +38,7 @@ def main():
                     if executable:
                         output.write(f'{arg} is {executable}\n')
                     else:
-                        output.write(f'{arg}: not found\n')
+                        error.write(f'{arg}: not found\n')
                 case ["pwd"]:
                     output.write(os.getcwd()+"\n")
                 case ["cd", "~"]:
@@ -39,13 +46,14 @@ def main():
                 case ["cd", destination] if os.path.exists(destination):
                     os.chdir(destination)
                 case ["cd", nonexistent_destination]:
-                        output.write(f'cd: {nonexistent_destination}: No such file or directory\n')
+                        error.write(f'cd: {nonexistent_destination}: No such file or directory\n')
                 case [command, *args] if find_executable(command):
-                    subprocess.run([command]+args, stdout=output)
+                    subprocess.run([command]+args, stdout=output, stderr=error)
                 case _:
-                    output.write(f'{" ".join(full_command)}: command not found\n')
+                    error.write(f'{" ".join(full_command)}: command not found\n')
     finally:
         output.close()
+        error.close()
 
 def tokenize(string):
     i = 0
