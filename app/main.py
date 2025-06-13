@@ -41,22 +41,31 @@ def main():
 def tokenize(string):
     i = 0
     tokens = []
+    separated = True
     while i < len(string):
         if string[i] == " ":
-            pass
+            i += 1
+            separated = True
         elif string[i] == "'":
             i += 1
             start = i
             while i < len(string) and string[i] != "'":
                 i += 1
-            tokens.append(string[start:i])
+            if separated:
+                tokens.append(string[start:i])
+            else:
+                tokens[-1] += string[start:i]
+            separated = False
         else:
             start = i
             i += 1
-            while i < len(string) and string[i] != " ":
+            while i < len(string) and string[i] != " " and string[i] != "'":
                 i += 1
-            tokens.append(string[start:i])
-        i += 1
+            if separated:
+                tokens.append(string[start:i])
+            else:
+                tokens[-1] += string[start:i]
+            separated = False
     return tokens
 
 def find_executable(name) -> None | str:
