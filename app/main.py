@@ -6,7 +6,7 @@ BUILTINS = ["exit", "echo", "type", "pwd", "cd"]
 
 def main():
     while True:
-        full_command = input("$ ").split()
+        full_command = tokenize(input("$ "))
         match full_command:
             case ["exit", status]:
                 sys.exit(0)
@@ -37,6 +37,29 @@ def main():
                     print(f'{command}: command not found')
             case _:
                 print(f'{" ".join(full_command)}: command not found')
+
+def tokenize(string):
+    i = 0
+    tokens = []
+    while i < len(string):
+        if string[i] == " ":
+            i += 1
+        elif string[i] == "'":
+            i += 1
+            token = ""
+            while string[i] != "'":
+                token += string[i]
+                i += 1
+            i += 1
+            tokens.append(token)
+        else:
+            token = string[i]
+            i += 1
+            while string[i] != " ":
+                token += string[i]
+                i += 1
+            tokens.append(token)
+    return tokens
 
 def find_executable(name) -> None | str:
     for dir in os.environ["PATH"].split(":"):
