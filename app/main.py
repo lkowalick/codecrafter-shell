@@ -41,7 +41,7 @@ def main():
                 case ["cd", nonexistent_destination]:
                         output.write(f'cd: {nonexistent_destination}: No such file or directory\n')
                 case [command, *args] if find_executable(command):
-                    subprocess.run([command]+args)
+                    subprocess.run([command]+args, stdout=output)
                 case _:
                     output.write(f'{" ".join(full_command)}: command not found\n')
     finally:
