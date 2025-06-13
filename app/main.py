@@ -17,15 +17,15 @@ def main():
             output = sys.stdout
             error = sys.stderr
             match full_command:
-                case [*beginning, ">", out_file, "2>", error_file] | [*beginning, "1>", out_file, "2>", error_file]:
-                    output = open(out_file,'w')
-                    error = open(error_file, 'w')
+                case [*beginning, ("1>" | "1>>" | ">" | ">>") as redir_out, out_file, ("2>" | "2>>") as redir_err, error_file]:
+                    output = open(out_file,'a') if redir_out.endswith(">>") else open(out_file,'w')
+                    error = open(error_file,'a') if redir_err.endswith(">>") else open(error_file,'w')
                     full_command = beginning
-                case [*beginning, ">", out_file] | [*beginning, "1>", out_file]:
-                    output = open(out_file,'w')
+                case [*beginning, ("1>" | "1>>" | ">" | ">>") as redir_out, out_file]:
+                    output = open(out_file,'a') if redir_out.endswith(">>") else open(out_file,'w')
                     full_command = beginning
-                case [*beginning, "2>", error_file]:
-                    error = open(error_file, 'w')
+                case [*beginning, ("2>" | "2>>") as redir_err, error_file]:
+                    error = open(error_file,'a') if redir_err.endswith(">>") else open(error_file,'w')
                     full_command = beginning
             match full_command:
                 case ["exit", _]:
