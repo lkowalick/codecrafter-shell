@@ -18,29 +18,24 @@ def main():
                 sys.exit(0)
             case ["echo", *rest]:
                 print(" ".join(rest))
+            case ["type", arg] if arg in BUILTINS:
+                print(f'{arg} is a shell builtin')
             case ["type", arg]:
-                if arg in BUILTINS:
-                    print(f'{arg} is a shell builtin')
+                executable = find_executable(arg)
+                if executable:
+                    print(f'{arg} is {executable}')
                 else:
-                    executable = find_executable(arg)
-                    if executable:
-                        print(f'{arg} is {executable}')
-                    else:
-                        print(f'{arg}: not found')
+                    print(f'{arg}: not found')
             case ["pwd"]:
                 print(os.getcwd())
-            case ["cd", destination]:
-                if destination == "~":
-                    os.chdir(os.environ["HOME"])
-                elif os.path.exists(destination):
-                    os.chdir(destination)
-                else:
-                    print(f'cd: {destination}: No such file or directory')
-            case [command, *args]:
-                if find_executable(command):
-                    subprocess.run([command]+args)
-                else:
-                    print(f'{command}: command not found')
+            case ["cd", "~"]:
+                os.chdir(os.environ["HOME"])
+            case ["cd", destination] if os.path.exists(destination):
+                os.chdir(destination)
+            case ["cd", nonexistent_destination]:
+                    print(f'cd: {nonexistent_destination}: No such file or directory')
+            case [command, *args] if find_executable(command):
+                subprocess.run([command]+args)
             case _:
                 print(f'{" ".join(full_command)}: command not found')
 
@@ -69,7 +64,7 @@ def tokenize(string):
             while i < len(string) and string[i] != DOUBLE_QUOTE:
                 if string[i] == BACKSLASH:
                     if string[i+1] == "n":
-                        string[i+1] == "\n"
+                        string[i+1] = "\n"
                     elif string[i+1] in ["$", BACKSLASH, DOUBLE_QUOTE]:
                         i += 1
                 token += string[i]
