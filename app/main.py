@@ -47,13 +47,13 @@ def tokenize(string):
         elif string[i] == "'":
             i += 1
             start = i
-            while string[i] != "'":
+            while i < len(string) and string[i] != "'":
                 i += 1
             tokens.append(string[start:i])
         else:
             start = i
             i += 1
-            while string[i] != " ":
+            while i < len(string) and string[i] != " ":
                 i += 1
             tokens.append(string[start:i])
         i += 1
