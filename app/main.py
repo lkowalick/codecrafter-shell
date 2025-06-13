@@ -8,6 +8,7 @@ SINGLE_QUOTE = "'"
 DOUBLE_QUOTE = '"'
 BACKSLASH = "\\"
 SPACE = " "
+NEWLINE = "\n"
 
 def main():
     while True:
@@ -67,7 +68,10 @@ def tokenize(string):
             token = ""
             while i < len(string) and string[i] != DOUBLE_QUOTE:
                 if string[i] == BACKSLASH:
-                    i += 1
+                    if string[i+1] == "n":
+                        string[i+1] == "\n"
+                    else:
+                        i += 1
                 token += string[i]
                 i += 1
             if separated:
