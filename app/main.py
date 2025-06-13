@@ -4,6 +4,11 @@ import subprocess
 
 BUILTINS = ["exit", "echo", "type", "pwd", "cd"]
 
+SINGLE_QUOTE = "'"
+DOUBLE_QUOTE = '"'
+BACKSLASH = "\\"
+SPACE = " "
+
 def main():
     while True:
         full_command = tokenize(input("$ "))
@@ -46,10 +51,10 @@ def tokenize(string):
         if string[i] == " ":
             i += 1
             separated = True
-        elif string[i] == "'":
+        elif string[i] == SINGLE_QUOTE:
             i += 1
             start = i
-            while i < len(string) and string[i] != "'":
+            while i < len(string) and string[i] != SINGLE_QUOTE:
                 i += 1
             if separated:
                 tokens.append(string[start:i])
@@ -57,10 +62,25 @@ def tokenize(string):
                 tokens[-1] += string[start:i]
             i += 1 # skip over the closing quote
             separated = False
+        elif string[i] == DOUBLE_QUOTE:
+            i += 1
+            start = i
+            token = ""
+            while i < len(string) and string[i] != DOUBLE_QUOTE:
+                if string[i] == BACKSLASH:
+                    i += 1
+                token += string[i]
+                i += 1
+            if separated:
+                tokens.append(token)
+            else:
+                tokens[-1] += token
+            i += 1 # skip over the closing quote
+            separated = False
         else:
             start = i
             i += 1
-            while i < len(string) and string[i] != " " and string[i] != "'":
+            while i < len(string) and string[i] != SPACE and string[i] != SINGLE_QUOTE:
                 i += 1
             if separated:
                 tokens.append(string[start:i])
