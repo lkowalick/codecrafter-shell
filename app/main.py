@@ -26,6 +26,7 @@ def main():
                     full_command = beginning
                 case [*beginning, "2>", error_file]:
                     error = open(error_file, 'w')
+                    full_command = beginning
             match full_command:
                 case ["exit", _]:
                     sys.exit(0)
