@@ -70,7 +70,7 @@ def tokenize(string):
                 if string[i] == BACKSLASH:
                     if string[i+1] == "n":
                         string[i+1] == "\n"
-                    else:
+                    elif string[i+1] in ["$", BACKSLASH, DOUBLE_QUOTE]:
                         i += 1
                 token += string[i]
                 i += 1
