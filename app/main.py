@@ -3,7 +3,7 @@ import os
 import subprocess
 import readline
 
-BUILTINS = ["exit", "echo", "type", "pwd", "cd"]
+BUILTINS = ["exit", "echo", "type", "pwd", "cd", "GET_BACKEND"]
 
 SINGLE_QUOTE = "'"
 DOUBLE_QUOTE = '"'
@@ -44,6 +44,8 @@ def main():
                         error.write(f'{arg}: not found\n')
                 case ["pwd"]:
                     output.write(os.getcwd()+"\n")
+                case ["GET_BACKEND"]:
+                    print(readline.backend)
                 case ["cd", "~"]:
                     os.chdir(os.environ["HOME"])
                 case ["cd", destination] if os.path.exists(destination):
@@ -139,6 +141,7 @@ def completion(text, state):
 def completion_display(substitution, matches, longest_match_length):
     print("")
     print(" ".join(matches))
+    sys.stdout.write("$ " +readline.get_line_buffer())
     readline.redisplay()
 
 def setup_readline():
