@@ -129,6 +129,7 @@ def setup_readline():
     if readline.backend == "editline":
         readline.parse_and_bind("bind ^I rl_complete")
     else:
+        print("USING BACKEND: ", readline.backend)
         readline.parse_and_bind('"\\t": rl_complete')
 
 def find_executable(name) -> None | str:
