@@ -13,7 +13,6 @@ NEWLINE = "\n"
 
 def main():
     setup_readline()
-
     try:
         while True:
             full_command = tokenize(input("$ "))
@@ -109,20 +108,33 @@ def tokenize(string):
 class Completer:
     completer = None
 
-    def __init__(self):
-        self.index = 0
+    def __init__(self, text):
+        self.completions = set()
+        self.complete_builtins(text)
+        self.complete_executables(text)
 
-    def complete(self, text):
-        while self.index < len(BUILTINS):
-            builtin_name = BUILTINS[self.index]
-            self.index += 1
-            if builtin_name.startswith(text):
-                return builtin_name + " "
+    def complete(self, state):
+        if state >= len(self.completions):
+            return None
+        return list(self.completions)[state]+" "
+
+    def complete_builtins(self, text):
+        for builtin in BUILTINS:
+            if builtin.startswith(text):
+                self.completions.add(builtin)
+
+    def complete_executables(self, text):
+        for dir in os.environ["PATH"].split(":"):
+            if not os.path.exists(dir):
+                continue
+            for executable in os.listdir(dir):
+                if executable.startswith(text):
+                    self.completions.add(executable)
 
 def completion(text, state):
     if state == 0:
-        Completer.completer = Completer()
-    return Completer.completer.complete(text)
+        Completer.completer = Completer(text)
+    return Completer.completer.complete(state)
 
 def setup_readline():
     readline.set_completer(completion)
