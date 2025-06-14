@@ -126,7 +126,10 @@ def completion(text, state):
 
 def setup_readline():
     readline.set_completer(completion)
-    readline.parse_and_bind("bind ^I rl_complete")
+    if readline.backend == "editline":
+        readline.parse_and_bind("bind ^I rl_complete")
+    else:
+        readline.parse_and_bind('"\\t": rl_complete')
 
 def find_executable(name) -> None | str:
     for dir in os.environ["PATH"].split(":"):
