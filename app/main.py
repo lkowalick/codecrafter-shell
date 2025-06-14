@@ -12,8 +12,8 @@ SPACE = " "
 NEWLINE = "\n"
 
 def main():
-    readline.set_completer(completion)
-    readline.parse_and_bind("bind ^I rl_complete")
+    setup_readline()
+
     try:
         while True:
             full_command = tokenize(input("$ "))
@@ -107,9 +107,15 @@ def tokenize(string):
     return tokens
 
 def completion(text, state):
-    for builtin in BUILTINS[state:]:
-        if builtin.startswith(text):
+    if state != 0:
+        return None
+    for builtin in BUILTINS:
+        if builtin.startswith(text.strip()):
             return builtin + " "
+
+def setup_readline():
+    readline.set_completer(completion)
+    readline.parse_and_bind("bind ^I rl_complete")
 
 def find_executable(name) -> None | str:
     for dir in os.environ["PATH"].split(":"):
