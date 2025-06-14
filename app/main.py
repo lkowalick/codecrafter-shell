@@ -142,15 +142,15 @@ def completion_display(substitution, matches, longest_match_length):
     print("")
     print(" ".join(matches))
     sys.stdout.write("$ " +readline.get_line_buffer())
-    readline.redisplay()
+    # readline.redisplay()
 
 def setup_readline():
     readline.set_completer(completion)
     if readline.backend == "editline":
         readline.parse_and_bind("bind ^I rl_complete")
-    else:
+    else: # assuming backend is "readline" here
         readline.parse_and_bind('tab: complete')
-    readline.set_completion_display_matches_hook(completion_display)
+        readline.set_completion_display_matches_hook(completion_display)
 
 def find_executable(name) -> None | str:
     for dir in os.environ["PATH"].split(":"):
