@@ -116,7 +116,7 @@ class Completer:
     def complete(self, state):
         if state >= len(self.completions):
             return None
-        return list(self.completions)[state]#+(" "  if state == len(self.completions) - 1 else "")
+        return list(self.completions)[state]+" "
 
     def complete_builtins(self, text):
         for builtin in BUILTINS:
@@ -136,12 +136,18 @@ def completion(text, state):
         Completer.completer = Completer(text)
     return Completer.completer.complete(state)
 
+def completion_display(substitution, matches, longest_match_length):
+    print("")
+    print(" ".join(matches))
+    readline.redisplay()
+
 def setup_readline():
     readline.set_completer(completion)
     if readline.backend == "editline":
         readline.parse_and_bind("bind ^I rl_complete")
     else:
         readline.parse_and_bind('tab: complete')
+    readline.set_completion_display_matches_hook(completion_display)
 
 def find_executable(name) -> None | str:
     for dir in os.environ["PATH"].split(":"):
