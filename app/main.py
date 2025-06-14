@@ -106,12 +106,23 @@ def tokenize(string):
             separated = False
     return tokens
 
+class Completer:
+    completer = None
+
+    def __init__(self):
+        self.index = 0
+
+    def complete(self, text):
+        while self.index < len(BUILTINS):
+            builtin_name = BUILTINS[self.index]
+            self.index += 1
+            if builtin_name.startswith(text):
+                return builtin_name + " "
+
 def completion(text, state):
-    if state != 0:
-        return None
-    for builtin in BUILTINS:
-        if builtin.startswith(text.strip()):
-            return builtin + " "
+    if state == 0:
+        Completer.completer = Completer()
+    return Completer.completer.complete(text)
 
 def setup_readline():
     readline.set_completer(completion)
