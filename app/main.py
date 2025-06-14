@@ -12,7 +12,6 @@ SPACE = " "
 NEWLINE = "\n"
 
 def main():
-    print(readline.backend)
     readline.set_completer(completion)
     readline.parse_and_bind("bind ^I rl_complete")
     try:
