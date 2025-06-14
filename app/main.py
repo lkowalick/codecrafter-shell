@@ -1,6 +1,7 @@
 import sys
 import os
 import subprocess
+import readline
 
 BUILTINS = ["exit", "echo", "type", "pwd", "cd"]
 
@@ -11,6 +12,9 @@ SPACE = " "
 NEWLINE = "\n"
 
 def main():
+    print(readline.backend)
+    readline.set_completer(completion)
+    readline.parse_and_bind("bind ^I rl_complete")
     try:
         while True:
             full_command = tokenize(input("$ "))
@@ -102,6 +106,11 @@ def tokenize(string):
                 tokens[-1] += token
             separated = False
     return tokens
+
+def completion(text, state):
+    for builtin in BUILTINS[state:]:
+        if builtin.startswith(text):
+            return builtin + " "
 
 def find_executable(name) -> None | str:
     for dir in os.environ["PATH"].split(":"):
