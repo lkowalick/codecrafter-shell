@@ -116,7 +116,7 @@ class Completer:
     def complete(self, state):
         if state >= len(self.completions):
             return None
-        return list(self.completions)[state]+" "
+        return list(self.completions)[state]#+(" "  if state == len(self.completions) - 1 else "")
 
     def complete_builtins(self, text):
         for builtin in BUILTINS:
