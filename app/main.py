@@ -129,7 +129,7 @@ def setup_readline():
     if readline.backend == "editline":
         readline.parse_and_bind("bind ^I rl_complete")
     else:
-        readline.parse_and_bind('bind "\\t": rl_complete')
+        readline.parse_and_bind('tab: complete')
 
 def find_executable(name) -> None | str:
     for dir in os.environ["PATH"].split(":"):
