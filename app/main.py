@@ -2,6 +2,8 @@ import sys
 import os
 import subprocess
 import readline
+from dataclasses import dataclass
+import io
 
 BUILTINS = ["exit", "echo", "type", "pwd", "cd", "GET_BACKEND"]
 
@@ -13,37 +15,24 @@ NEWLINE = "\n"
 
 def main():
     setup_readline()
-    try:
-        while True:
-            full_command = tokenize(input("$ "))
-            output = sys.stdout
-            error = sys.stderr
-            match full_command:
-                case [*beginning, ("1>" | "1>>" | ">" | ">>") as redir_out, out_file, ("2>" | "2>>") as redir_err, error_file]:
-                    output = open(out_file,'a') if redir_out.endswith(">>") else open(out_file,'w')
-                    error = open(error_file,'a') if redir_err.endswith(">>") else open(error_file,'w')
-                    full_command = beginning
-                case [*beginning, ("1>" | "1>>" | ">" | ">>") as redir_out, out_file]:
-                    output = open(out_file,'a') if redir_out.endswith(">>") else open(out_file,'w')
-                    full_command = beginning
-                case [*beginning, ("2>" | "2>>") as redir_err, error_file]:
-                    error = open(error_file,'a') if redir_err.endswith(">>") else open(error_file,'w')
-                    full_command = beginning
-            match full_command:
+    while True:
+        full_commands = parse_output(tokenize_with_pipes(input("$ ")))
+        for full_command in full_commands:
+            match full_command.command:
                 case ["exit", _]:
                     sys.exit(0)
                 case ["echo", *rest]:
-                    output.write(" ".join(rest)+"\n")
+                    full_command.output.write(" ".join(rest)+"\n")
                 case ["type", arg] if arg in BUILTINS:
-                    output.write(f'{arg} is a shell builtin\n')
+                    full_command.output.write(f'{arg} is a shell builtin\n')
                 case ["type", arg]:
                     executable = find_executable(arg)
                     if executable:
-                        output.write(f'{arg} is {executable}\n')
+                        full_command.output.write(f'{arg} is {executable}\n')
                     else:
-                        error.write(f'{arg}: not found\n')
+                        full_command.error.write(f'{arg}: not found\n')
                 case ["pwd"]:
-                    output.write(os.getcwd()+"\n")
+                    full_command.output.write(os.getcwd()+"\n")
                 case ["GET_BACKEND"]:
                     print(readline.backend)
                 case ["cd", "~"]:
@@ -51,14 +40,19 @@ def main():
                 case ["cd", destination] if os.path.exists(destination):
                     os.chdir(destination)
                 case ["cd", nonexistent_destination]:
-                        error.write(f'cd: {nonexistent_destination}: No such file or directory\n')
+                    full_command.error.write(f'cd: {nonexistent_destination}: No such file or directory\n')
                 case [command, *args] if find_executable(command):
-                    subprocess.run([command]+args, stdout=output, stderr=error)
+                    subprocess.run([command]+args, stdout=full_command.output, stderr=full_command.error)
                 case _:
-                    error.write(f'{" ".join(full_command)}: command not found\n')
-    finally:
-        output.close()
-        error.close()
+                    full_command.error.write(f'{" ".join(full_command)}: command not found\n')
+        # output.close()
+        # error.close()
+
+def tokenize_with_pipes(string):
+    result = []
+    for subcommand in string.split("|"):
+        result.append(tokenize(subcommand))
+    return result
 
 def tokenize(string):
     i = 0
@@ -141,14 +135,13 @@ def completion(text, state):
 def completion_display(substitution, matches, longest_match_length):
     print("")
     print(" ".join(matches))
-    sys.stdout.write("$ " +readline.get_line_buffer())
-    # readline.redisplay()
+    print("$ " +readline.get_line_buffer(), end="")
 
 def setup_readline():
     readline.set_completer(completion)
     if readline.backend == "editline":
         readline.parse_and_bind("bind ^I rl_complete")
-    else: # assuming backend is "readline" here
+    else:
         readline.parse_and_bind('tab: complete')
         readline.set_completion_display_matches_hook(completion_display)
 
@@ -159,6 +152,42 @@ def find_executable(name) -> None | str:
         for executable in os.listdir(dir):
             if executable == name:
                 return f'{dir}/{executable}'
+
+def wire_pipes(commands):
+    pipes = [os.pipe() for _ in range(len(commands)-1)]
+    full_commands = [None for _ in commands]
+    for i, command in enumerate(commands):
+        inp = None if i == 0 else pipes[i-1][0]
+        output = pipes[i][1] if i < len(pipes) else sys.stdout
+        full_commands[i] = Command(command, inp, output, sys.stderr)
+    return full_commands
+
+def parse_output(commands):
+    if len(commands) > 1:
+        return wire_pipes(commands)
+    command = commands[0]
+    output, error = None, None
+    while ">" in "".join(command):
+        match command:
+            case [*beginning, ("1>" | "1>>" | ">" | ">>") as redir_out, out_file]:
+                output = open(out_file,'a') if redir_out.endswith(">>") else open(out_file,'w')
+                command = beginning
+            case [*beginning, ("2>" | "2>>") as redir_err, error_file]:
+                error = open(error_file,'a') if redir_err.endswith(">>") else open(error_file,'w')
+                command = beginning
+    if output is None:
+        output = sys.stdout
+    if error is None:
+        error = sys.stderr
+    return [Command(command, None, output, error)]
+
+@dataclass
+class Command:
+    command: str
+    inp: None | io.TextIOWrapper
+    output: io.TextIOWrapper = sys.stdout
+    error: io.TextIOWrapper = sys.stderr
+
 
 if __name__ == "__main__":
     main()
