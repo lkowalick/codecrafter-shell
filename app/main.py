@@ -1,11 +1,11 @@
 import sys
 import os
-import subprocess
 import readline
 from dataclasses import dataclass
 import io
 from typing import Literal, Optional
 from functools import reduce
+import asyncio
 
 BUILTINS = ["exit", "echo", "type", "pwd", "cd", "GET_BACKEND"]
 
@@ -23,13 +23,31 @@ class Command:
     output: Literal[-1] | io.TextIOWrapper = sys.stdout
     error: io.TextIOWrapper = sys.stderr
 
-def main():
+async def main():
     setup_readline()
     while True:
         full_commands = parse_output(tokenize_with_pipes(input("$ ")))
-        reduce(execute_command, full_commands, None)
+        processes = []
+        previous_process = None
+        for full_command in full_commands:
+            process = await execute_command(previous_process, full_command)
+            processes.append(process)
+            previous_process = process
 
-def execute_command(previous_output: Optional[io.TextIOWrapper], full_command: Command) -> Optional[io.TextIOWrapper]:
+        async def helper(index, process):
+            previous_process = None if index == 0 else processes[index - 1]
+            if previous_process:
+                async for line in previous_process.stdout:
+                    await process.communicate(line)
+        async with asyncio.TaskGroup() as tg:
+            for (i, process) in enumerate(processes):
+                tg.create_task(helper(i, process))
+        for process in processes:
+            await process.wait()
+
+
+async def execute_command(previous_process: Optional[asyncio.subprocess.Process], full_command: Command) -> Optional[asyncio.subprocess.Process]:
+    print("EXECUTING", full_command, "with previous process", previous_process.stdout if previous_process else None)
     match full_command.command:
         case ["exit", _]:
             sys.exit(0)
@@ -54,18 +72,20 @@ def execute_command(previous_output: Optional[io.TextIOWrapper], full_command: C
         case ["cd", nonexistent_destination]:
             full_command.error.write(f'cd: {nonexistent_destination}: No such file or directory\n')
         case [command, *args] if find_executable(command):
-            stdin = subprocess.PIPE if full_command.piped_input else None
-            process = subprocess.Popen([command]+args, stdin=stdin, stdout=full_command.output, stderr=full_command.error)
-            output, error = process.communicate(previous_output)
-            if error:
-                full_command.error.write(error)
-            if full_command.output == subprocess.PIPE:
-                return output
-            if output:
-                full_command.output.write(output)
+            stdin = asyncio.subprocess.PIPE if full_command.piped_input else None
+            print("CREATING SUBPROCESS await asyncio.create_subprocess_exec(", *([command]+args), stdin, full_command.output, full_command.error)
+            process = await asyncio.create_subprocess_exec(*([command]+args), stdin=stdin, stdout=full_command.output, stderr=full_command.error)
+            # if process.stderr:
+            #     full_command.error.write(process.stderr)
+            # if process.stdout:
+            #     full_command.output.write(output)
+            return process
         case _:
             full_command.error.write(f'{" ".join(full_command)}: command not found\n')
 
+async def get_output_line(previous_process):
+    async for line in previous_process.stdout:
+        yield line
 
 def tokenize_with_pipes(string):
     result = []
@@ -176,7 +196,7 @@ def wire_pipes(commands):
     full_commands = [None for _ in commands]
     for i, command in enumerate(commands):
         pipe_input = False if i == 0 else True
-        output = subprocess.PIPE if i < len(commands) - 1 else sys.stdout
+        output = asyncio.subprocess.PIPE if i < len(commands) - 1 else sys.stdout
         full_commands[i] = Command(command, pipe_input, output, sys.stderr)
     return full_commands
 
@@ -200,4 +220,4 @@ def parse_output(commands):
     return [Command(command, None, output, error)]
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
