@@ -28,12 +28,12 @@ async def main():
     while True:
         full_commands, pipes = parse_output(tokenize_with_pipes(input("$ ")))
         processes = []
-        for i, full_command in enumerate(full_commands):
+        for full_command in full_commands:
             process = await execute_command(full_command)
-            if i < len(full_commands) - 1:
-                os.close(pipes[i][1])
-            if i > 0:
-                os.close(pipes[i-1][0])
+            if full_command.output is not None:
+                os.close(full_command.output)
+            if full_command.piped_input is not None:
+                os.close(full_command.piped_input)
             processes.append(process)
         async with asyncio.TaskGroup() as tg:
             for process in processes:
