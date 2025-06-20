@@ -150,10 +150,10 @@ class Completer:
                 if executable.startswith(text):
                     self.completions.add(executable)
 
-def completion(text, state):
-    if state == 0:
-        Completer.completer = Completer(text)
-    return Completer.completer.complete(state)
+    def completion(text, state):
+        if state == 0:
+            Completer.completer = Completer(text)
+        return Completer.completer.complete(state)
 
 def completion_display(substitution, matches, longest_match_length):
     print("")
@@ -161,7 +161,7 @@ def completion_display(substitution, matches, longest_match_length):
     print("$ " +readline.get_line_buffer(), end="")
 
 def setup_readline():
-    readline.set_completer(completion)
+    readline.set_completer(Completer.completion)
     if readline.backend == "editline":
         readline.parse_and_bind("bind ^I rl_complete")
     else:
