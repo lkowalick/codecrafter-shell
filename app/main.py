@@ -37,7 +37,8 @@ async def main():
             processes.append(process)
         async with asyncio.TaskGroup() as tg:
             for process in processes:
-                tg.create_task(process.wait())
+                if hasattr(process, "wait"):
+                    tg.create_task(process.wait())
 
 
 async def execute_command(full_command: Command) -> Optional[asyncio.subprocess.Process]:
@@ -68,7 +69,7 @@ async def execute_command(full_command: Command) -> Optional[asyncio.subprocess.
             process = await asyncio.create_subprocess_exec(*([command]+args), stdin=full_command.piped_input, stdout=full_command.output, stderr=full_command.error)
             return process
         case _:
-            full_command.error.write(f'{" ".join(full_command)}: command not found\n')
+            full_command.error.write(f'{" ".join(full_command.command)}: command not found\n')
 
 def tokenize_with_pipes(string):
     result = []
