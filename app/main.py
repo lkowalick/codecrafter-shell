@@ -35,11 +35,6 @@ async def main():
             if i > 0:
                 os.close(pipes[i-1][0])
             processes.append(process)
-        for process in processes:
-            if process.stdout:
-                os.close(process.stdout)
-            if process.stdin:
-                os.close(process.stdin)
         async with asyncio.TaskGroup() as tg:
             for process in processes:
                 tg.create_task(process.wait())
