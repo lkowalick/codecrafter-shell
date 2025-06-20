@@ -4,6 +4,8 @@ import subprocess
 import readline
 from dataclasses import dataclass
 import io
+from typing import Literal, Optional
+from functools import reduce
 
 BUILTINS = ["exit", "echo", "type", "pwd", "cd", "GET_BACKEND"]
 
@@ -13,40 +15,57 @@ BACKSLASH = "\\"
 SPACE = " "
 NEWLINE = "\n"
 
+
+@dataclass
+class Command:
+    command: str
+    piped_input: bool = False
+    output: Literal[-1] | io.TextIOWrapper = sys.stdout
+    error: io.TextIOWrapper = sys.stderr
+
 def main():
     setup_readline()
     while True:
         full_commands = parse_output(tokenize_with_pipes(input("$ ")))
-        for full_command in full_commands:
-            match full_command.command:
-                case ["exit", _]:
-                    sys.exit(0)
-                case ["echo", *rest]:
-                    full_command.output.write(" ".join(rest)+"\n")
-                case ["type", arg] if arg in BUILTINS:
-                    full_command.output.write(f'{arg} is a shell builtin\n')
-                case ["type", arg]:
-                    executable = find_executable(arg)
-                    if executable:
-                        full_command.output.write(f'{arg} is {executable}\n')
-                    else:
-                        full_command.error.write(f'{arg}: not found\n')
-                case ["pwd"]:
-                    full_command.output.write(os.getcwd()+"\n")
-                case ["GET_BACKEND"]:
-                    print(readline.backend)
-                case ["cd", "~"]:
-                    os.chdir(os.environ["HOME"])
-                case ["cd", destination] if os.path.exists(destination):
-                    os.chdir(destination)
-                case ["cd", nonexistent_destination]:
-                    full_command.error.write(f'cd: {nonexistent_destination}: No such file or directory\n')
-                case [command, *args] if find_executable(command):
-                    subprocess.run([command]+args, stdout=full_command.output, stderr=full_command.error)
-                case _:
-                    full_command.error.write(f'{" ".join(full_command)}: command not found\n')
-        # output.close()
-        # error.close()
+        reduce(execute_command, full_commands, None)
+
+def execute_command(previous_output: Optional[io.TextIOWrapper], full_command: Command) -> Optional[io.TextIOWrapper]:
+    match full_command.command:
+        case ["exit", _]:
+            sys.exit(0)
+        case ["echo", *rest]:
+            full_command.output.write(" ".join(rest)+"\n")
+        case ["type", arg] if arg in BUILTINS:
+            full_command.output.write(f'{arg} is a shell builtin\n')
+        case ["type", arg]:
+            executable = find_executable(arg)
+            if executable:
+                full_command.output.write(f'{arg} is {executable}\n')
+            else:
+                full_command.error.write(f'{arg}: not found\n')
+        case ["pwd"]:
+            full_command.output.write(os.getcwd()+"\n")
+        case ["GET_BACKEND"]:
+            print(readline.backend)
+        case ["cd", "~"]:
+            os.chdir(os.environ["HOME"])
+        case ["cd", destination] if os.path.exists(destination):
+            os.chdir(destination)
+        case ["cd", nonexistent_destination]:
+            full_command.error.write(f'cd: {nonexistent_destination}: No such file or directory\n')
+        case [command, *args] if find_executable(command):
+            stdin = subprocess.PIPE if full_command.piped_input else None
+            process = subprocess.Popen([command]+args, stdin=stdin, stdout=full_command.output, stderr=full_command.error)
+            output, error = process.communicate(previous_output)
+            if error:
+                full_command.error.write(error)
+            if full_command.output == subprocess.PIPE:
+                return output
+            if output:
+                full_command.output.write(output)
+        case _:
+            full_command.error.write(f'{" ".join(full_command)}: command not found\n')
+
 
 def tokenize_with_pipes(string):
     result = []
@@ -154,12 +173,11 @@ def find_executable(name) -> None | str:
                 return f'{dir}/{executable}'
 
 def wire_pipes(commands):
-    pipes = [os.pipe() for _ in range(len(commands)-1)]
     full_commands = [None for _ in commands]
     for i, command in enumerate(commands):
-        inp = None if i == 0 else pipes[i-1][0]
-        output = pipes[i][1] if i < len(pipes) else sys.stdout
-        full_commands[i] = Command(command, inp, output, sys.stderr)
+        pipe_input = False if i == 0 else True
+        output = subprocess.PIPE if i < len(commands) - 1 else sys.stdout
+        full_commands[i] = Command(command, pipe_input, output, sys.stderr)
     return full_commands
 
 def parse_output(commands):
@@ -180,14 +198,6 @@ def parse_output(commands):
     if error is None:
         error = sys.stderr
     return [Command(command, None, output, error)]
-
-@dataclass
-class Command:
-    command: str
-    inp: None | io.TextIOWrapper
-    output: io.TextIOWrapper = sys.stdout
-    error: io.TextIOWrapper = sys.stderr
-
 
 if __name__ == "__main__":
     main()
