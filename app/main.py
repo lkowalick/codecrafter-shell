@@ -7,11 +7,10 @@ async def main():
     setup_readline()
     while True:
         async with asyncio.TaskGroup() as tg:
-            for full_command in Parser.parse(input("$ ")):
-                process = await full_command.execute()
-                full_command.close()
-                if hasattr(process, "wait"):
-                    tg.create_task(process.wait())
+            for command in Parser.parse(input("$ ")):
+                await command.execute()
+                command.close_io()
+                tg.create_task(command.wait())
 
 def setup_readline():
     readline.set_completer(Completer.completion)

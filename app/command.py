@@ -14,6 +14,7 @@ class Command:
     piped_input: Optional[io.TextIOWrapper] = None
     output: io.TextIOWrapper = sys.stdout
     error: io.TextIOWrapper = sys.stderr
+    process: asyncio.subprocess.Process | None = None
 
     async def execute(self):
         output = self.output if hasattr(self.output, "write") else os.fdopen(self.output, "w")
@@ -41,7 +42,7 @@ class Command:
             case ["cd", nonexistent_destination]:
                 self.error.write(f'cd: {nonexistent_destination}: No such file or directory\n')
             case [command, *args] if Command.find_executable(command):
-                return await asyncio.create_subprocess_exec(*([command]+args), stdin=self.piped_input, stdout=self.output, stderr=self.error)
+                self.process = await asyncio.create_subprocess_exec(*([command]+args), stdin=self.piped_input, stdout=self.output, stderr=self.error)
             case _:
                 self.error.write(f'{" ".join(self.command)}: command not found\n')
     
@@ -53,9 +54,13 @@ class Command:
                 if executable == name:
                     return f'{dir}/{executable}'
                 
-    def close(self):
+    def close_io(self):
         Command.try_close_file(self.output)
         Command.try_close_file(self.piped_input)
+
+    async def wait(self):
+        if self.process:
+            await self.process.wait()
     
     def try_close_file(fd_or_file):
         try:
