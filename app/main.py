@@ -10,4 +10,4 @@ async def main():
                 tg.create_task(command.exec_and_wait())
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(asyncio.gather(main()))
