@@ -42,21 +42,22 @@ async def main():
 
 
 async def execute_command(full_command: Command) -> Optional[asyncio.subprocess.Process]:
+    output = full_command.output if hasattr(full_command.output, "write") else os.fdopen(full_command.output, "w")
     match full_command.command:
         case ["exit", _]:
             sys.exit(0)
         case ["echo", *rest]:
-            full_command.output.write(" ".join(rest)+"\n")
+            output.write(" ".join(rest)+"\n")
         case ["type", arg] if arg in BUILTINS:
-            full_command.output.write(f'{arg} is a shell builtin\n')
+            output.write(f'{arg} is a shell builtin\n')
         case ["type", arg]:
             executable = find_executable(arg)
             if executable:
-                full_command.output.write(f'{arg} is {executable}\n')
+                output.write(f'{arg} is {executable}\n')
             else:
                 full_command.error.write(f'{arg}: not found\n')
         case ["pwd"]:
-            full_command.output.write(os.getcwd()+"\n")
+            output.write(os.getcwd()+"\n")
         case ["GET_BACKEND"]:
             print(readline.backend)
         case ["cd", "~"]:
