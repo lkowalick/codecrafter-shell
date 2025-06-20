@@ -9,6 +9,7 @@ async def main():
         async with asyncio.TaskGroup() as tg:
             for full_command in Parser.parse(input("$ ")):
                 process = await full_command.execute()
+                full_command.close()
                 if hasattr(process, "wait"):
                     tg.create_task(process.wait())
 

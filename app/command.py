@@ -41,10 +41,7 @@ class Command:
             case ["cd", nonexistent_destination]:
                 self.error.write(f'cd: {nonexistent_destination}: No such file or directory\n')
             case [command, *args] if Command.find_executable(command):
-                process = await asyncio.create_subprocess_exec(*([command]+args), stdin=self.piped_input, stdout=self.output, stderr=self.error)
-                Command.try_close_file(self.output)
-                Command.try_close_file(self.piped_input)
-                return process
+                return await asyncio.create_subprocess_exec(*([command]+args), stdin=self.piped_input, stdout=self.output, stderr=self.error)
             case _:
                 self.error.write(f'{" ".join(self.command)}: command not found\n')
     
@@ -56,6 +53,10 @@ class Command:
                 if executable == name:
                     return f'{dir}/{executable}'
                 
+    def close(self):
+        Command.try_close_file(self.output)
+        Command.try_close_file(self.piped_input)
+    
     def try_close_file(fd_or_file):
         try:
             os.close(fd_or_file)
