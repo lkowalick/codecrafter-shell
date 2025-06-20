@@ -3,11 +3,10 @@ import os
 import readline
 from dataclasses import dataclass
 import io
-from typing import Literal, Optional
-from functools import reduce
+from typing import Optional
 import asyncio
 
-BUILTINS = ["exit", "echo", "type", "pwd", "cd", "GET_BACKEND"]
+BUILTINS = ["exit", "echo", "type", "pwd", "cd", "history", "GET_BACKEND"]
 
 SINGLE_QUOTE = "'"
 DOUBLE_QUOTE = '"'
@@ -26,25 +25,20 @@ class Command:
 async def main():
     setup_readline()
     while True:
-        full_commands, pipes = parse_output(tokenize_with_pipes(input("$ ")))
-        processes = []
-        for full_command in full_commands:
-            process = await execute_command(full_command)
-            if full_command.output is not None:
-                try:
-                    os.close(full_command.output)
-                except:
-                    pass
-            if full_command.piped_input is not None:
-                try:
-                    os.close(full_command.piped_input)
-                except:
-                    pass
-            processes.append(process)
         async with asyncio.TaskGroup() as tg:
-            for process in processes:
+            for full_command in parse_output(tokenize_with_pipes(input("$ "))):
+                process = await execute_command(full_command)
+                try_close_file(full_command.output)
+                try_close_file(full_command.piped_input)
                 if hasattr(process, "wait"):
                     tg.create_task(process.wait())
+
+
+def try_close_file(fd_or_file):
+    try:
+        os.close(fd_or_file)
+    except:
+        pass
 
 
 async def execute_command(full_command: Command) -> Optional[asyncio.subprocess.Process]:
@@ -73,8 +67,7 @@ async def execute_command(full_command: Command) -> Optional[asyncio.subprocess.
         case ["cd", nonexistent_destination]:
             full_command.error.write(f'cd: {nonexistent_destination}: No such file or directory\n')
         case [command, *args] if find_executable(command):
-            process = await asyncio.create_subprocess_exec(*([command]+args), stdin=full_command.piped_input, stdout=full_command.output, stderr=full_command.error)
-            return process
+            return await asyncio.create_subprocess_exec(*([command]+args), stdin=full_command.piped_input, stdout=full_command.output, stderr=full_command.error)
         case _:
             full_command.error.write(f'{" ".join(full_command.command)}: command not found\n')
 
@@ -190,13 +183,13 @@ def wire_pipes(commands):
         pipe_input = None if i == 0 else pipes[i-1][0]
         output = pipes[i][1] if i < len(commands) - 1 else sys.stdout
         full_commands[i] = Command(command, pipe_input, output, sys.stderr)
-    return full_commands, pipes
+    return full_commands
 
 def parse_output(commands):
     if len(commands) > 1:
         return wire_pipes(commands)
     command = commands[0]
-    output, error = None, None
+    output, error = sys.stdout, sys.stderr
     while ">" in "".join(command):
         match command:
             case [*beginning, ("1>" | "1>>" | ">" | ">>") as redir_out, out_file]:
@@ -205,11 +198,7 @@ def parse_output(commands):
             case [*beginning, ("2>" | "2>>") as redir_err, error_file]:
                 error = open(error_file,'a') if redir_err.endswith(">>") else open(error_file,'w')
                 command = beginning
-    if output is None:
-        output = sys.stdout
-    if error is None:
-        error = sys.stderr
-    return [Command(command, None, output, error)], []
+    return [Command(command, None, output, error)]
 
 if __name__ == "__main__":
     asyncio.run(main())
