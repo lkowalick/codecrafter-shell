@@ -30,14 +30,16 @@ async def main():
         processes = []
         for full_command in full_commands:
             process = await execute_command(full_command)
-#            print("CLOSING FILES FOR PROCESS", full_command)
             if full_command.output is not None:
                 try:
                     os.close(full_command.output)
                 except:
                     pass
             if full_command.piped_input is not None:
-                os.close(full_command.piped_input)
+                try:
+                    os.close(full_command.piped_input)
+                except:
+                    pass
             processes.append(process)
         async with asyncio.TaskGroup() as tg:
             for process in processes:
