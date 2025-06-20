@@ -2,7 +2,7 @@ import os
 import readline
 from app.command import Command
 
-class Completer:
+class Readline:
     completer = None
 
     def __init__(self, text):
@@ -30,10 +30,19 @@ class Completer:
 
     def completion(text, state):
         if state == 0:
-            Completer.completer = Completer(text)
-        return Completer.completer.complete(state)
+            Readline.completer = Readline(text)
+        return Readline.completer.complete(state)
     
     def completion_display(substitution, matches, longest_match_length):
         print("")
         print(" ".join(matches))
         print("$ " +readline.get_line_buffer(), end="")
+
+    def setup():
+        readline.set_completer(Readline.completion)
+        if readline.backend == "editline":
+            readline.parse_and_bind("bind ^I rl_complete")
+        else:
+            readline.parse_and_bind('tab: complete')
+            readline.set_completion_display_matches_hook(Readline.completion_display)
+        
