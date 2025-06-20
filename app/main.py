@@ -26,13 +26,23 @@ class Command:
 async def main():
     setup_readline()
     while True:
-        full_commands = parse_output(tokenize_with_pipes(input("$ ")))
+        full_commands, pipes = parse_output(tokenize_with_pipes(input("$ ")))
         processes = []
-        for full_command in full_commands:
+        for i, full_command in enumerate(full_commands):
             process = await execute_command(full_command)
+            if i < len(full_commands) - 1:
+                os.close(pipes[i][1])
+            if i > 0:
+                os.close(pipes[i-1][0])
             processes.append(process)
         for process in processes:
-            await process.wait()
+            if process.stdout:
+                os.close(process.stdout)
+            if process.stdin:
+                os.close(process.stdin)
+        async with asyncio.TaskGroup() as tg:
+            for process in processes:
+                tg.create_task(process.wait())
 
 
 async def execute_command(full_command: Command) -> Optional[asyncio.subprocess.Process]:
@@ -174,10 +184,10 @@ def wire_pipes(commands):
     full_commands = [None for _ in commands]
     pipes = [os.pipe() for _ in commands[:-1]]
     for i, command in enumerate(commands):
-        pipe_input = False if i == 0 else pipes[i-1][0]
+        pipe_input = None if i == 0 else pipes[i-1][0]
         output = pipes[i][1] if i < len(commands) - 1 else sys.stdout
         full_commands[i] = Command(command, pipe_input, output, sys.stderr)
-    return full_commands
+    return full_commands, pipes
 
 def parse_output(commands):
     if len(commands) > 1:
@@ -196,7 +206,7 @@ def parse_output(commands):
         output = sys.stdout
     if error is None:
         error = sys.stderr
-    return [Command(command, None, output, error)]
+    return [Command(command, None, output, error)], []
 
 if __name__ == "__main__":
     asyncio.run(main())
