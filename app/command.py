@@ -62,6 +62,11 @@ class Command:
         if self.process:
             await self.process.wait()
     
+    async def exec_and_wait(self):
+        await self.execute()
+        self.close_io()
+        await self.wait()
+
     def try_close_file(fd_or_file):
         try:
             os.close(fd_or_file)
